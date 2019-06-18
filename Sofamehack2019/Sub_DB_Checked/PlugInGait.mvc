@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MokkaModelVisualConfiguration name="PlugInGait" version="1.0">
+    <MarkersList>
+        <Marker label="LFHD" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="RFHD" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="LBHD" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="RBHD" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="C7" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="T10" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="CLAV" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="STRN" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="RBAK" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="LSHO" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LELB" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LWRA" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LWRB" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LFIN" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="RSHO" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RELB" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RWRA" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RWRB" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RFIN" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="LASI" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="RASI" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="LPSI" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="RPSI" radius="12.5" colorR="0" colorG="0" colorB="1"/>
+        <Marker label="LTHI" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LKNE" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LTIB" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LANK" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LHEE" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="LTOE" radius="12.5" colorR="1" colorG="0" colorB="0"/>
+        <Marker label="RTHI" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RKNE" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RTIB" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RANK" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RHEE" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="RTOE" radius="12.5" colorR="0" colorG="1" colorB="0"/>
+        <Marker label="CentreOfMass" radius="17" colorR="1" colorG="0.666667" colorB="1"/>
+        <Marker label="CentreOfMassFloor" radius="17" colorR="1" colorG="0.666667" colorB="1"/>
+    </MarkersList>
+    <SegmentsList>
+        <Segment label="Pelvis" colorR="0" colorG="0" colorB="1" description="">
+            <Point label="LASI"/>
+            <Point label="RASI"/>
+            <Point label="LPSI"/>
+            <Point label="RPSI"/>
+            <Link pt1="LASI" pt2="RASI"/>
+            <Link pt1="LASI" pt2="LPSI"/>
+            <Link pt1="LASI" pt2="RPSI"/>
+            <Link pt1="RASI" pt2="LPSI"/>
+            <Link pt1="RASI" pt2="RPSI"/>
+            <Link pt1="LPSI" pt2="RPSI"/>
+        </Segment>
+        <Segment label="Head" colorR="0" colorG="0" colorB="1" description="">
+            <Point label="LFHD"/>
+            <Point label="RFHD"/>
+            <Point label="LBHD"/>
+            <Point label="RBHD"/>
+            <Link pt1="LFHD" pt2="RFHD"/>
+            <Link pt1="LFHD" pt2="LBHD"/>
+            <Link pt1="LFHD" pt2="RBHD"/>
+            <Link pt1="RFHD" pt2="LBHD"/>
+            <Link pt1="RFHD" pt2="RBHD"/>
+            <Link pt1="LBHD" pt2="RBHD"/>
+        </Segment>
+        <Segment label="Thorax" colorR="0" colorG="0" colorB="1" description="">
+            <Point label="C7"/>
+            <Point label="T10"/>
+            <Point label="CLAV"/>
+            <Point label="STRN"/>
+            <Point label="RBAK"/>
+            <Link pt1="C7" pt2="T10"/>
+            <Link pt1="C7" pt2="CLAV"/>
+            <Link pt1="C7" pt2="STRN"/>
+            <Link pt1="C7" pt2="RBAK"/>
+            <Link pt1="T10" pt2="CLAV"/>
+            <Link pt1="T10" pt2="STRN"/>
+            <Link pt1="T10" pt2="RBAK"/>
+            <Link pt1="CLAV" pt2="STRN"/>
+        </Segment>
+        <Segment label="LeftClavicle" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="CLAV"/>
+            <Point label="LSHO"/>
+            <Link pt1="CLAV" pt2="LSHO"/>
+        </Segment>
+        <Segment label="LeftHumerus" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="LSHO"/>
+            <Point label="LELB"/>
+            <Link pt1="LSHO" pt2="LELB"/>
+        </Segment>
+        <Segment label="LeftRadius" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="LELB"/>
+            <Point label="LWRA"/>
+            <Point label="LWRB"/>
+            <Link pt1="LELB" pt2="LWRA"/>
+            <Link pt1="LELB" pt2="LWRB"/>
+            <Link pt1="LWRA" pt2="LWRB"/>
+        </Segment>
+        <Segment label="LeftHand" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="LWRA"/>
+            <Point label="LFIN"/>
+            <Point label="LWRB"/>
+            <Link pt1="LWRA" pt2="LFIN"/>
+            <Link pt1="LWRB" pt2="LFIN"/>
+        </Segment>
+        <Segment label="RightClavicle" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="CLAV"/>
+            <Point label="RSHO"/>
+            <Link pt1="CLAV" pt2="RSHO"/>
+        </Segment>
+        <Segment label="RightHumerus" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="RSHO"/>
+            <Point label="RELB"/>
+            <Link pt1="RSHO" pt2="RELB"/>
+        </Segment>
+        <Segment label="RightRadius" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="RELB"/>
+            <Point label="RWRA"/>
+            <Point label="RWRB"/>
+            <Link pt1="RELB" pt2="RWRA"/>
+            <Link pt1="RELB" pt2="RWRB"/>
+            <Link pt1="RWRA" pt2="RWRB"/>
+        </Segment>
+        <Segment label="RightHand" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="RWRA"/>
+            <Point label="RFIN"/>
+            <Point label="RWRB"/>
+            <Link pt1="RWRA" pt2="RFIN"/>
+            <Link pt1="RWRB" pt2="RFIN"/>
+        </Segment>
+        <Segment label="LeftFemur" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="LASI"/>
+            <Point label="LTHI"/>
+            <Point label="LKNE"/>
+            <Point label="LPSI"/>
+            <Link pt1="LASI" pt2="LTHI"/>
+            <Link pt1="LASI" pt2="LKNE"/>
+            <Link pt1="LPSI" pt2="LKNE"/>
+            <Link pt1="LTHI" pt2="LKNE"/>
+        </Segment>
+        <Segment label="LeftTibia" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="LKNE"/>
+            <Point label="LTIB"/>
+            <Link pt1="LKNE" pt2="LTIB"/>
+        </Segment>
+        <Segment label="LeftTibialTorsioned" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="LKNE"/>
+            <Point label="LANK"/>
+            <Point label="LTIB"/>
+            <Link pt1="LKNE" pt2="LANK"/>
+            <Link pt1="LTIB" pt2="LANK"/>
+        </Segment>
+        <Segment label="LeftFoot" colorR="1" colorG="0" colorB="0" description="">
+            <Point label="LANK"/>
+            <Point label="LHEE"/>
+            <Point label="LTOE"/>
+            <Link pt1="LANK" pt2="LHEE"/>
+            <Link pt1="LANK" pt2="LTOE"/>
+            <Link pt1="LHEE" pt2="LTOE"/>
+        </Segment>
+        <Segment label="RightFemur" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="RASI"/>
+            <Point label="RTHI"/>
+            <Point label="RKNE"/>
+            <Point label="RPSI"/>
+            <Link pt1="RASI" pt2="RTHI"/>
+            <Link pt1="RASI" pt2="RKNE"/>
+            <Link pt1="RPSI" pt2="RKNE"/>
+            <Link pt1="RTHI" pt2="RKNE"/>
+        </Segment>
+        <Segment label="RightTibia" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="RKNE"/>
+            <Point label="RTIB"/>
+            <Link pt1="RKNE" pt2="RTIB"/>
+        </Segment>
+        <Segment label="RightTibialTorsioned" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="RKNE"/>
+            <Point label="RANK"/>
+            <Point label="RTIB"/>
+            <Link pt1="RKNE" pt2="RANK"/>
+            <Link pt1="RTIB" pt2="RANK"/>
+        </Segment>
+        <Segment label="RightFoot" colorR="0" colorG="1" colorB="0" description="">
+            <Point label="RANK"/>
+            <Point label="RHEE"/>
+            <Point label="RTOE"/>
+            <Link pt1="RANK" pt2="RHEE"/>
+            <Link pt1="RANK" pt2="RTOE"/>
+            <Link pt1="RHEE" pt2="RTOE"/>
+        </Segment>
+    </SegmentsList>
+</MokkaModelVisualConfiguration>
