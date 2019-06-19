@@ -201,46 +201,53 @@ def testmodel(model, directoire, dirpath):
 
     return dfresult
 
+
 dirpath = './Sofamehack2019/Sub_DB_Checked/'
 dir = ['FD/']
+MeanExpo = []
+MeanSum = []
+framelist = [-9,0,9]
+print(framelist)
+for i in range(20):
+    [x_train, y_train, dfInit] = dataCollect(framelist, dir, dirpath)
+    model = NaivesBayes(x_train,y_train)
+    dataframeresult = testmodel(model, dir, dirpath)
+    nligneInit = dfInit.shape[0]
+    diffTest = []
+    for el in range(nligneInit):
+        value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1])
+            & (dataframeresult['event'] == dfInit.iloc[el,2]), 'frame'] - dfInit.iloc[el,3]))
+        diffTest = np.append(diffTest, value)
+    MeanSum = np.append(MeanSum,  np.sum(diffTest))
+    MeanExpo = np.append(MeanExpo, np.sum(np.exp(diffTest), axis = 0))
 
-[x_train, y_train, dfEventInit] = dataCollect([-15,-10,-5,0,5,10,15], dir, dirpath)
-
-print('Taille de nos donnees : ',x_train.shape)
 
 #X_train, X_test,Y_train,Y_test = train_test_split(x_train,y_train)
 
-model = NaivesBayes(x_train,y_train)
-print(model.feature_importances_)
+#print(model.feature_importances_)
 
 #model = logistic(x_train, y_train)
 #model = KNN(x_train,y_train)
 #model = MLP(x_train,y_train)
 
-dfresult = testmodel(model, dir, dirpath)
 
 # dtree_predictions = model.predict(X_test)
 # cm = confusion_matrix(Y_test, dtree_predictions)
 # print(cm)
 # print(accuracy_score(Y_test,dtree_predictions))
 
-nligneInit = dfEventInit.shape[0]
-diffTest = []
-for el in range(nligneInit):
-    #print(dfEventInit.iloc[el,:])
-    #print 'result : ',  np.min(np.abs(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1]) & (dfresult['event'] == dfEventInit.iloc[el,2]), 'frame'] - dfEventInit.iloc[el,3]))
-    #print(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1]) & (dfresult['event'] == dfEventInit.iloc[el,2])])
-    value = np.min(np.abs(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1])
-        & (dfresult['event'] == dfEventInit.iloc[el,2]), 'frame'] - dfEventInit.iloc[el,3]))
-    diffTest = np.append(diffTest, value)
-    if (value > 5 or math.isnan(value)):
-        print(dfEventInit.iloc[el,:])
-        print 'result : ', value
-        print(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1]) & (dfresult['event'] == dfEventInit.iloc[el,2])])
-        print("\n\n")
+# nligneInit = dfEventInit.shape[0]
+# diffTest = []
+# for el in range(nligneInit):
+#     value = np.min(np.abs(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1])
+#         & (dfresult['event'] == dfEventInit.iloc[el,2]), 'frame'] - dfEventInit.iloc[el,3]))
+#     diffTest = np.append(diffTest, value)
+    # if (value > 5 or math.isnan(value)):
+    #     print(dfEventInit.iloc[el,:])
+    #     print 'result : ', value
+    #     print(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1]) & (dfresult['event'] == dfEventInit.iloc[el,2])])
+    #     print("\n\n")
     #diffTest = np.append(diff, np.min(np.abs(dfEventInit.loc[''])))
 
-print("facteur important ", model.feature_importances_)
-
-print(" Erreur sum total : ", np.sum(diffTest))
-print(" Erreur exponentiel : ", np.sum(np.exp(diffTest), axis = 0))
+print(" Erreur sum total : ", np.mean(MeanSum))
+print(" Erreur exponentiel : ", np.mean(MeanExpo))
