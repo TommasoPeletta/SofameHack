@@ -97,8 +97,9 @@ def dataCollect(neighbours, directoire, dirpath):
                     for i in neighbours: #[-15,0,15]: #
                         if k == 0:
                             x_train = np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                              acq.GetPoint(argument[1]).GetValues()[frame+i,2],acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
-                              acq.GetPoint(argument[3]).GetValues()[frame+i,2]-acq.GetPoint(argument[0]).GetValues()[frame+i,2]])
+                              acq.GetPoint(argument[0]).GetValues()[frame+i,0]-acq.GetPoint(argument[1]).GetValues()[frame+i,0],
+                              #acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
+                              acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0]])
                              # np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
                              #  acq.GetPoint(argument[1]).GetValues()[frame+i,2],acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI])
                              # #,acq.GetPoint('LANK').GetValues()[frame+i,2]
@@ -110,7 +111,8 @@ def dataCollect(neighbours, directoire, dirpath):
                             k = 1
                         else:
                             x_train = np.vstack([x_train, np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                            acq.GetPoint(argument[1]).GetValues()[frame+i,2],acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
+                            acq.GetPoint(argument[0]).GetValues()[frame+i,0]-acq.GetPoint(argument[1]).GetValues()[frame+i,0],
+                            #acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
                             acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0]])])
                             if (i == 0):
                                 dfEventInit = dfEventInit.append({'video' : filename , 'pied' : pied, 'event' : event.GetLabel(), 'frame': event.GetFrame()}, ignore_index=True)
@@ -136,11 +138,11 @@ def testmodel(model, directoire, dirpath):
             reader.Update()
             acq = reader.GetOutput()
             mean_TOE = np.mean(acq.GetPoint('LTOE').GetValues()[:,2])
-            data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('LHEE').GetValues()[:,2]]))), axis = 1)
+            data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,0]-acq.GetPoint('LHEE').GetValues()[:,0]]))), axis = 1)
             mean_PSI = np.mean(acq.GetPoint('LPSI').GetValues()[:,2])
             max_PSI = np.max(acq.GetPoint('LPSI').GetValues()[:,2])
             min_PSI = np.min(acq.GetPoint('LPSI').GetValues()[:,2])
-            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
+            #data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
             data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LKNE').GetValues()[:,0]-acq.GetPoint('LTOE').GetValues()[:,0]]))),axis = 1)
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
@@ -174,11 +176,11 @@ def testmodel(model, directoire, dirpath):
             reader.Update()
             acq = reader.GetOutput()
             mean_TOE = np.mean(acq.GetPoint('RTOE').GetValues()[:,2])
-            data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('RTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('RHEE').GetValues()[:,2]]))), axis = 1)
+            data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('RTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('RTOE').GetValues()[:,0]-acq.GetPoint('RHEE').GetValues()[:,0]]))), axis = 1)
             mean_PSI = np.mean(acq.GetPoint('RPSI').GetValues()[:,2])
             max_PSI = np.max(acq.GetPoint('RPSI').GetValues()[:,2])
             min_PSI = np.min(acq.GetPoint('RPSI').GetValues()[:,2])
-            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
+            #data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
             data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RKNE').GetValues()[:,0]-acq.GetPoint('RTOE').GetValues()[:,0]]))),axis = 1)
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
@@ -203,12 +205,12 @@ def testmodel(model, directoire, dirpath):
 
 
 dirpath = './Sofamehack2019/Sub_DB_Checked/'
-dir = ['FD/']
+dir = ['ITW/']
 MeanExpo = []
 MeanSum = []
 framelist = [-9,0,9]
 print(framelist)
-for i in range(20):
+for i in range(10):
     [x_train, y_train, dfInit] = dataCollect(framelist, dir, dirpath)
     model = NaivesBayes(x_train,y_train)
     dataframeresult = testmodel(model, dir, dirpath)
@@ -218,13 +220,20 @@ for i in range(20):
         value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1])
             & (dataframeresult['event'] == dfInit.iloc[el,2]), 'frame'] - dfInit.iloc[el,3]))
         diffTest = np.append(diffTest, value)
+        # if (value > 6 or math.isnan(value)):
+        #     print(dfInit.iloc[el,:])
+        #     print 'result : ', value
+        #     print(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1]) & (dataframeresult['event'] == dfInit.iloc[el,2])])
+        #     print("\n\n")
+    print(model.feature_importances_)
     MeanSum = np.append(MeanSum,  np.sum(diffTest))
     MeanExpo = np.append(MeanExpo, np.sum(np.exp(diffTest), axis = 0))
 
 
 #X_train, X_test,Y_train,Y_test = train_test_split(x_train,y_train)
-
+#model = NaivesBayes(x_train,y_train)
 #print(model.feature_importances_)
+
 
 #model = logistic(x_train, y_train)
 #model = KNN(x_train,y_train)
