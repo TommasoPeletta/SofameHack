@@ -257,7 +257,7 @@ for el in range(nligneInit):
         print("\n\n")
     #diffTest = np.append(diff, np.min(np.abs(dfEventInit.loc[''])))
 
-print(model.feature_importances_)
+print("facteur important ", model.feature_importances_)
 
-print(dfresult.shape[0])
-print(" Erreur total : ", np.sum(diffTest))
+print(" Erreur sum total : ", np.sum(diffTest))
+print(" Erreur exponentiel : ", np.sum(np.exp(diffTest), axis = 0))
