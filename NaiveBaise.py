@@ -13,6 +13,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn import tree
 from sklearn.cluster import KMeans
+from numpy import linalg as LA
 
 
 def computelist(dfresult, list, pied, cur, filename):
@@ -71,37 +72,26 @@ def dataCollect(neighbours, directoire, dirpath):
             reader.SetFilename(path)
             reader.Update()
             acq = reader.GetOutput()
-
-            mean_PSI = np.mean(acq.GetPoint('LPSI').GetValues()[:,2])
             for nEve in range(100):
                 try:
                     event = acq.GetEvent(nEve) # extract the first event of the aquisition
                     #print(event.GetLabel()) # return a string representing the Label
                     if (event.GetContext() == "Left"):
                         pied = "left"
-                        argument = ['LTOE','LHEE','LPSI', 'LKNE']
-                        mean_PSI = np.mean(acq.GetPoint('LPSI').GetValues()[:,2])
-                        max_PSI = np.max(acq.GetPoint('LPSI').GetValues()[:,2])
-                        min_PSI = np.min(acq.GetPoint('LPSI').GetValues()[:,2])
+                        argument = ['LTOE','LHEE', 'LKNE']
                         mean_TOE = np.mean(acq.GetPoint('LTOE').GetValues()[:,2])
 
                     else:
                         pied = "right"
-                        argument = ['RTOE','RHEE','RPSI', 'RKNE']
-                        mean_PSI = np.mean(acq.GetPoint('RPSI').GetValues()[:,2])
-                        max_PSI = np.max(acq.GetPoint('RPSI').GetValues()[:,2])
-                        min_PSI = np.min(acq.GetPoint('RPSI').GetValues()[:,2])
+                        argument = ['RTOE','RHEE','RKNE']
                         mean_TOE = np.mean(acq.GetPoint('RTOE').GetValues()[:,2])
 
                     frame = event.GetFrame()
                     for i in neighbours: #[-15,0,15]: #
                         if k == 0:
                             x_train = np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                              acq.GetPoint(argument[1]).GetValues()[frame+i,2],acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
-                              acq.GetPoint(argument[3]).GetValues()[frame+i,2]-acq.GetPoint(argument[0]).GetValues()[frame+i,2]])
-                             # np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                             #  acq.GetPoint(argument[1]).GetValues()[frame+i,2],acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI])
-                             # #,acq.GetPoint('LANK').GetValues()[frame+i,2]
+                              acq.GetPoint(argument[1]).GetValues()[frame+i,2],
+                              LA.norm(np.array([acq.GetPoint(argument[2]).GetValues()[frame+i,0],acq.GetPoint(argument[2]).GetValues()[frame+i,2]])-np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,0], acq.GetPoint(argument[0]).GetValues()[frame+i,2]]))])
                             if (i == 0):
                                 y_train = np.array([event.GetLabel()])
                                 dfEventInit = dfEventInit.append({'video' : filename , 'pied' : pied, 'event' : event.GetLabel(), 'frame': event.GetFrame()}, ignore_index=True)
@@ -110,14 +100,13 @@ def dataCollect(neighbours, directoire, dirpath):
                             k = 1
                         else:
                             x_train = np.vstack([x_train, np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                            acq.GetPoint(argument[1]).GetValues()[frame+i,2],acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
-                            acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0]])])
+                            acq.GetPoint(argument[1]).GetValues()[frame+i,2],
+                            LA.norm(np.array([acq.GetPoint(argument[2]).GetValues()[frame+i,0],acq.GetPoint(argument[2]).GetValues()[frame+i,2]])-np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,0], acq.GetPoint(argument[0]).GetValues()[frame+i,2]]))])])
                             if (i == 0):
                                 dfEventInit = dfEventInit.append({'video' : filename , 'pied' : pied, 'event' : event.GetLabel(), 'frame': event.GetFrame()}, ignore_index=True)
                                 y_train = np.vstack([y_train, np.array([event.GetLabel()])])
                             else:
                                 y_train = np.vstack([y_train, np.array(["Not_Event"])])
-
                 except Exception as e:
                     break
     return x_train, y_train, dfEventInit
@@ -137,11 +126,7 @@ def testmodel(model, directoire, dirpath):
             acq = reader.GetOutput()
             mean_TOE = np.mean(acq.GetPoint('LTOE').GetValues()[:,2])
             data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('LHEE').GetValues()[:,2]]))), axis = 1)
-            mean_PSI = np.mean(acq.GetPoint('LPSI').GetValues()[:,2])
-            max_PSI = np.max(acq.GetPoint('LPSI').GetValues()[:,2])
-            min_PSI = np.min(acq.GetPoint('LPSI').GetValues()[:,2])
-            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
-            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LKNE').GetValues()[:,0]-acq.GetPoint('LTOE').GetValues()[:,0]]))),axis = 1)
+            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([LA.norm(np.array([acq.GetPoint('LKNE').GetValues()[:,0],acq.GetPoint('LKNE').GetValues()[:,2]])-np.array([acq.GetPoint('LTOE').GetValues()[:,0], acq.GetPoint('LTOE').GetValues()[:,2]]),axis = 0)]))),axis = 1)
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
             dfEvent = df.loc[df['result'] != 'Not_Event']
@@ -175,11 +160,7 @@ def testmodel(model, directoire, dirpath):
             acq = reader.GetOutput()
             mean_TOE = np.mean(acq.GetPoint('RTOE').GetValues()[:,2])
             data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('RTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('RHEE').GetValues()[:,2]]))), axis = 1)
-            mean_PSI = np.mean(acq.GetPoint('RPSI').GetValues()[:,2])
-            max_PSI = np.max(acq.GetPoint('RPSI').GetValues()[:,2])
-            min_PSI = np.min(acq.GetPoint('RPSI').GetValues()[:,2])
-            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
-            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RKNE').GetValues()[:,0]-acq.GetPoint('RTOE').GetValues()[:,0]]))),axis = 1)
+            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([LA.norm(np.array([acq.GetPoint('RKNE').GetValues()[:,0],acq.GetPoint('RKNE').GetValues()[:,2]])-np.array([acq.GetPoint('RTOE').GetValues()[:,0], acq.GetPoint('RTOE').GetValues()[:,2]]),axis = 0)]))),axis = 1)
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
             dfEvent = df.loc[df['result'] != 'Not_Event']
@@ -203,7 +184,7 @@ def testmodel(model, directoire, dirpath):
 
 
 dirpath = './Sofamehack2019/Sub_DB_Checked/'
-dir = ['FD/']
+dir = ['CP/']
 MeanExpo = []
 MeanSum = []
 framelist = [-9,0,9]
@@ -224,7 +205,7 @@ for i in range(20):
 
 #X_train, X_test,Y_train,Y_test = train_test_split(x_train,y_train)
 
-#print(model.feature_importances_)
+print(model.feature_importances_)
 
 #model = logistic(x_train, y_train)
 #model = KNN(x_train,y_train)
