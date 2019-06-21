@@ -263,7 +263,7 @@ def testmodel(model, directoire, dirpath, listTest):
 
 
 dirpath = './Sofamehack2019/Sub_DB_Checked/'
-dir = ['CP/']
+dir = ['FD/']
 
 framelist = [-9,0,9]
 dataFrame = Data(framelist, dir, dirpath)
