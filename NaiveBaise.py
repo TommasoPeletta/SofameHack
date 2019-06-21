@@ -15,6 +15,7 @@ from sklearn import tree
 from sklearn.cluster import KMeans
 
 
+#calul the precise event and add one if it was forget
 def computelist(dfresult, list, pied, cur, filename):
     if (filename == 'Cavus_Foot_01993_20130923_10.c3d'):
         if (list[len(list)-1] - list[0] >= 30):
@@ -59,11 +60,9 @@ def MLP(x_train, y_train):
     return mlp
 
 
-
-
-def dataCollect(neighbours, directoire, dirpath):
+def Data(neighbours, directoire, dirpath):
     k = 0
-    dfEventInit = pd.DataFrame(columns = ['video', 'pied','event','frame'])
+    data = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx'])
     for d in directoire:
         for filename in os.listdir(dirpath + d):
             path = dirpath + d + filename
@@ -71,8 +70,6 @@ def dataCollect(neighbours, directoire, dirpath):
             reader.SetFilename(path)
             reader.Update()
             acq = reader.GetOutput()
-
-            mean_PSI = np.mean(acq.GetPoint('LPSI').GetValues()[:,2])
             for nEve in range(100):
                 try:
                     event = acq.GetEvent(nEve) # extract the first event of the aquisition
@@ -80,56 +77,104 @@ def dataCollect(neighbours, directoire, dirpath):
                     if (event.GetContext() == "Left"):
                         pied = "left"
                         argument = ['LTOE','LHEE','LPSI', 'LKNE']
-                        mean_PSI = np.mean(acq.GetPoint('LPSI').GetValues()[:,2])
-                        max_PSI = np.max(acq.GetPoint('LPSI').GetValues()[:,2])
-                        min_PSI = np.min(acq.GetPoint('LPSI').GetValues()[:,2])
                         mean_TOE = np.mean(acq.GetPoint('LTOE').GetValues()[:,2])
 
                     else:
                         pied = "right"
                         argument = ['RTOE','RHEE','RPSI', 'RKNE']
-                        mean_PSI = np.mean(acq.GetPoint('RPSI').GetValues()[:,2])
-                        max_PSI = np.max(acq.GetPoint('RPSI').GetValues()[:,2])
-                        min_PSI = np.min(acq.GetPoint('RPSI').GetValues()[:,2])
                         mean_TOE = np.mean(acq.GetPoint('RTOE').GetValues()[:,2])
 
                     frame = event.GetFrame()
                     for i in neighbours: #[-15,0,15]: #
-                        if k == 0:
-                            x_train = np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                              acq.GetPoint(argument[0]).GetValues()[frame+i,0]-acq.GetPoint(argument[1]).GetValues()[frame+i,0],
-                              #acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
-                              acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0]])
-                             # np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                             #  acq.GetPoint(argument[1]).GetValues()[frame+i,2],acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI])
-                             # #,acq.GetPoint('LANK').GetValues()[frame+i,2]
-                            if (i == 0):
-                                y_train = np.array([event.GetLabel()])
-                                dfEventInit = dfEventInit.append({'video' : filename , 'pied' : pied, 'event' : event.GetLabel(), 'frame': event.GetFrame()}, ignore_index=True)
-                            else:
-                                y_train = np.array(["Not_Event"])
-                            k = 1
-                        else:
-                            x_train = np.vstack([x_train, np.array([acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
-                            acq.GetPoint(argument[0]).GetValues()[frame+i,0]-acq.GetPoint(argument[1]).GetValues()[frame+i,0],
-                            #acq.GetPoint(argument[2]).GetValues()[frame+i,2]-mean_PSI,
-                            acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0]])])
-                            if (i == 0):
-                                dfEventInit = dfEventInit.append({'video' : filename , 'pied' : pied, 'event' : event.GetLabel(), 'frame': event.GetFrame()}, ignore_index=True)
-                                y_train = np.vstack([y_train, np.array([event.GetLabel()])])
-                            else:
-                                y_train = np.vstack([y_train, np.array(["Not_Event"])])
+                        eventname = "Not_Event"
+                        if i == 0:
+                            eventname = event.GetLabel()
+                        data  = data.append({'video' : filename , 'pied' : pied, 'event' : eventname, 'frame': frame+i,
+                        'TOEz-mean_TOEz': acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
+                        'TOEx-HEEx': acq.GetPoint(argument[0]).GetValues()[frame+i,0]-acq.GetPoint(argument[1]).GetValues()[frame+i,0],
+                         'KNEx-TOEx': acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0]}, ignore_index=True)
 
                 except Exception as e:
                     break
-    return x_train, y_train, dfEventInit
+    return data
+
+def ParseFileName(dataframe):
+    filename = []
+    idlist = []
+    df = dataframe.copy()
+    df.drop_duplicates(subset = "video", inplace = True)
+    for index,row in df.iterrows():
+        filename.append(row['video'])
+        tmp_list = row['video'].split("_")
+        for j in range(len(tmp_list)):
+            if (not (tmp_list[j][0]).isalpha()):
+                idlist.append(tmp_list[j])
+                break
+    idset = list(set(idlist))
+
+    return filename,idlist,idset
+
+def SplitData(pos, idset, idlist, filename):
+    idTest = []
+    idTrain = []
+    xTrain = []
+    xTest = []
+    for i in range(len(idset)):
+        if (pos == 0):
+            if (i <= math.floor(len(idset)* (2.0/3.0))):
+                idTrain.append(idset[i])
+            else:
+                idTest.append(idset[i])
+        if (pos == 2):
+            if (i >= math.floor(len(idset) * (1.0/3.0))):
+                idTrain.append(idset[i])
+            else:
+                idTest.append(idset[i])
+        if (pos == 1):
+            if (i < math.floor(len(idset) * (1.0/3.0)) or i >= math.floor(len(idset) * (2.0/3.0))):
+                idTrain.append(idset[i])
+            else:
+                idTest.append(idset[i])
+    for i in range(len(idlist)):
+        if (idlist[i] in idTrain):
+            xTrain.append(filename[i])
+        else:
+            xTest.append(filename[i])
+    return xTrain, xTest
 
 
-def testmodel(model, directoire, dirpath):
+def test(dataFrame, listTrain, listTest, dir , dirpath):
+    dataTrain = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx'])
+    dataTest = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx'])
+    for el in listTrain:
+        dataTrain = dataTrain.append(dataFrame.loc[dataFrame['video'] == el])
+    for el in listTest:
+        dataTest = dataTest.append(dataFrame.loc[dataFrame['video'] == el])
+    model = DecisionTreeClassifier().fit(dataTrain[['TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx']],dataTrain.event)
+    dataframeresult = testmodel(model, dir, dirpath, listTest)
+    MeanExpo = []
+    MeanSum = []
+    dfEvent = dataTest.loc[dataTest['event'] != "Not_Event"]
+    nligneInit = dfEvent.shape[0]
+    diffTest = []
+    for el in range(nligneInit):
+        value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfEvent.iloc[el,0]) & (dataframeresult['pied'] == dfEvent.iloc[el,1])
+            & (dataframeresult['event'] == dfEvent.iloc[el,2]), 'frame'] - dfEvent.iloc[el,3]))
+        diffTest = np.append(diffTest, value)
+
+    print(model.feature_importances_)
+    MeanSum = np.append(MeanSum,  np.sum(diffTest))
+    MeanExpo = np.append(MeanExpo, np.sum(np.exp(diffTest), axis = 0))
+    erreur = 0
+    return MeanSum, MeanExpo
+
+
+
+def testmodel(model, directoire, dirpath, listTest):
     dfresult = pd.DataFrame(columns = ['video', 'pied','event','frame'])
 
     for d in directoire:
-        for filename in os.listdir(dirpath + d):
+        for filename in listTest:
             path = dirpath + d + filename
 
             reader = btk.btkAcquisitionFileReader()
@@ -167,7 +212,7 @@ def testmodel(model, directoire, dirpath):
 
 
     for d in directoire:
-        for filename in os.listdir(dirpath + d):
+        for filename in listTest:
             path = dirpath + d + filename
 
             reader = btk.btkAcquisitionFileReader()
@@ -206,28 +251,31 @@ def testmodel(model, directoire, dirpath):
 
 dirpath = './Sofamehack2019/Sub_DB_Checked/'
 dir = ['ITW/']
-MeanExpo = []
-MeanSum = []
+
 framelist = [-9,0,9]
-print(framelist)
-for i in range(10):
-    [x_train, y_train, dfInit] = dataCollect(framelist, dir, dirpath)
-    model = NaivesBayes(x_train,y_train)
-    dataframeresult = testmodel(model, dir, dirpath)
-    nligneInit = dfInit.shape[0]
-    diffTest = []
-    for el in range(nligneInit):
-        value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1])
-            & (dataframeresult['event'] == dfInit.iloc[el,2]), 'frame'] - dfInit.iloc[el,3]))
-        diffTest = np.append(diffTest, value)
-        # if (value > 6 or math.isnan(value)):
-        #     print(dfInit.iloc[el,:])
-        #     print 'result : ', value
-        #     print(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1]) & (dataframeresult['event'] == dfInit.iloc[el,2])])
-        #     print("\n\n")
-    print(model.feature_importances_)
-    MeanSum = np.append(MeanSum,  np.sum(diffTest))
-    MeanExpo = np.append(MeanExpo, np.sum(np.exp(diffTest), axis = 0))
+dataFrame = Data(framelist, dir, dirpath)
+[filename, idPersonne, setPersonne] = ParseFileName(dataFrame)
+[listTrain, listTest] = SplitData(0, setPersonne, idPersonne, filename)
+[MeanSum, MeanExpo] = test(dataFrame, listTrain, listTest, dir , dirpath)
+
+# for i in range(10):
+#     [x_train, y_train, dfInit] = dataCollect(framelist, dir, dirpath)
+#     model = NaivesBayes(x_train,y_train)
+#     dataframeresult = testmodel(model, dir, dirpath)
+#     nligneInit = dfInit.shape[0]
+#     diffTest = []
+#     for el in range(nligneInit):
+#         value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1])
+#             & (dataframeresult['event'] == dfInit.iloc[el,2]), 'frame'] - dfInit.iloc[el,3]))
+#         diffTest = np.append(diffTest, value)
+#         # if (value > 6 or math.isnan(value)):
+#         #     print(dfInit.iloc[el,:])
+#         #     print 'result : ', value
+#         #     print(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1]) & (dataframeresult['event'] == dfInit.iloc[el,2])])
+#         #     print("\n\n")
+#     print(model.feature_importances_)
+#     MeanSum = np.append(MeanSum,  np.sum(diffTest))
+#     MeanExpo = np.append(MeanExpo, np.sum(np.exp(diffTest), axis = 0))
 
 
 #X_train, X_test,Y_train,Y_test = train_test_split(x_train,y_train)
