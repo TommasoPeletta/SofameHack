@@ -61,7 +61,7 @@ def MLP(x_train, y_train):
 
 def Data(neighbours, directoire, dirpath):
     k = 0
-    data = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx'])
+    data = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied'])
     for d in directoire:
         for filename in os.listdir(dirpath + d):
             path = dirpath + d + filename
@@ -93,7 +93,9 @@ def Data(neighbours, directoire, dirpath):
                         data  = data.append({'video' : filename , 'pied' : pied, 'event' : eventname, 'frame': frame+i,
                         'TOEz-mean_TOEz': acq.GetPoint(argument[0]).GetValues()[frame+i,2]-mean_TOE,
                         'TOEx-HEEx': acq.GetPoint(argument[0]).GetValues()[frame+i,0]-acq.GetPoint(argument[1]).GetValues()[frame+i,0]-mean_dif,
-                         'KNEx-TOEx': acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0]}, ignore_index=True)
+                         'KNEx-TOEx': acq.GetPoint(argument[3]).GetValues()[frame+i,0]-acq.GetPoint(argument[0]).GetValues()[frame+i,0],
+                         'min_pied': min(acq.GetPoint(argument[0]).GetValues()[frame+i,2], acq.GetPoint(argument[1]).GetValues()[frame+i,2])}, ignore_index=True)
+
 
                 except Exception as e:
                     break
@@ -145,16 +147,16 @@ def SplitData(pos, idset, idlist, filename):
 
 
 def test(dataFrame, listTrain, listTest, dir , dirpath):
-    dataTrain = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx'])
-    dataTest = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx'])
+    dataTrain = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied'])
+    dataTest = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied'])
     for el in listTrain:
         dataTrain = dataTrain.append(dataFrame.loc[dataFrame['video'] == el])
     for el in listTest:
         dataTest = dataTest.append(dataFrame.loc[dataFrame['video'] == el])
-    print("training : ", listTrain)
-    print("test : ", listTest)
-    #model =  KNeighborsClassifier(n_neighbors = 3, metric = 'euclidean').fit(dataTrain[['TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx']],dataTrain.event)
-    model = DecisionTreeClassifier().fit(dataTrain[['TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx']],dataTrain.event)
+    model =  KNeighborsClassifier(n_neighbors = 3, metric = 'euclidean').fit(dataTrain[['TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied']],dataTrain.event)
+    model = DecisionTreeClassifier().fit(dataTrain[['TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied']],dataTrain.event)
+    print(model.feature_importances_)
+
     dataframeresult = testmodel(model, dir, dirpath, listTest)
     dfEvent = dataTest.loc[dataTest['event'] != "Not_Event"]
     nligneInit = dfEvent.shape[0]
@@ -163,6 +165,9 @@ def test(dataFrame, listTrain, listTest, dir , dirpath):
     for el in range(nligneInit):
         value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfEvent.iloc[el,0]) & (dataframeresult['pied'] == dfEvent.iloc[el,1])
             & (dataframeresult['event'] == dfEvent.iloc[el,2]), 'frame'] - dfEvent.iloc[el,3]))
+        if (value > 10):
+            print(dfEvent.iloc[el,:])
+            print(dataframeresult.loc[dataframeresult['video'] == dfEvent.iloc[el,0]])
         if (dfEvent.iloc[el,2] == "Foot_Off_GS"):
             diffTestOff = np.append(diffTestOff, value)
         elif (dfEvent.iloc[el,2] == "Foot_Strike_GS"):
@@ -177,10 +182,10 @@ def test(dataFrame, listTrain, listTest, dir , dirpath):
     MeanExpoOff = np.sum(np.exp(diffTestOff), axis = 0)
     MeanSumStrick = np.sum(diffTestStrick)
     MeanExpoStrick = np.sum(np.exp(diffTestStrick), axis = 0)
-    print(MeanSumOff)
-    print(MeanExpoOff)
-    print(MeanSumStrick)
-    print(MeanExpoStrick)
+    print(" sum off ", MeanSumOff)
+    print(" expo off ", MeanExpoOff)
+    print("sum strick ", MeanSumStrick)
+    print("expo strick ", MeanExpoStrick)
     return MeanSumOff, MeanExpoOff, MeanSumStrick, MeanExpoStrick
 
 
@@ -203,6 +208,8 @@ def testmodel(model, directoire, dirpath, listTest):
             data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,0]-acq.GetPoint('LHEE').GetValues()[:,0]-mean_dif]))), axis = 1)
             #data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
             data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LKNE').GetValues()[:,0]-acq.GetPoint('LTOE').GetValues()[:,0]]))),axis = 1)
+            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.minimum(np.array([acq.GetPoint('LTOE').GetValues()[:,2]]),np.array([acq.GetPoint('LHEE').GetValues()[:,2]])))),axis = 1)
+
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
             dfEvent = df.loc[df['result'] != 'Not_Event']
@@ -241,6 +248,7 @@ def testmodel(model, directoire, dirpath, listTest):
 
             #data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
             data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RKNE').GetValues()[:,0]-acq.GetPoint('RTOE').GetValues()[:,0]]))),axis = 1)
+            data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.minimum(np.array([acq.GetPoint('RTOE').GetValues()[:,2]]),np.array([acq.GetPoint('RHEE').GetValues()[:,2]])))),axis = 1)
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
             dfEvent = df.loc[df['result'] != 'Not_Event']
@@ -265,7 +273,7 @@ def testmodel(model, directoire, dirpath, listTest):
 dirpath = './Sofamehack2019/Sub_DB_Checked/'
 dir = ['CP/']
 
-framelist = [-9,0,9]
+framelist = [0,9]
 dataFrame = Data(framelist, dir, dirpath)
 [filename, idPersonne, setPersonne] = ParseFileName(dataFrame)
 MeanSumOff = np.zeros(3)
@@ -275,53 +283,7 @@ MeanExpoStrick = np.zeros(3)
 for i in range(3):
     [listTrain, listTest] = SplitData(i, setPersonne, idPersonne, filename)
     [MeanSumOff[i], MeanExpoOff[i], MeanSumStrick[i], MeanExpoStrick[i]] = test(dataFrame, listTrain, listTest, dir , dirpath)
-# for i in range(10):
-#     [x_train, y_train, dfInit] = dataCollect(framelist, dir, dirpath)
-#     model = NaivesBayes(x_train,y_train)
-#     dataframeresult = testmodel(model, dir, dirpath)
-#     nligneInit = dfInit.shape[0]
-#     diffTest = []
-#     for el in range(nligneInit):
-#         value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1])
-#             & (dataframeresult['event'] == dfInit.iloc[el,2]), 'frame'] - dfInit.iloc[el,3]))
-#         diffTest = np.append(diffTest, value)
-#         # if (value > 6 or math.isnan(value)):
-#         #     print(dfInit.iloc[el,:])
-#         #     print 'result : ', value
-#         #     print(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1]) & (dataframeresult['event'] == dfInit.iloc[el,2])])
-#         #     print("\n\n")
-#     print(model.feature_importances_)
-#     MeanSum = np.append(MeanSum,  np.sum(diffTest))
-#     MeanExpo = np.append(MeanExpo, np.sum(np.exp(diffTest), axis = 0))
 
-
-#X_train, X_test,Y_train,Y_test = train_test_split(x_train,y_train)
-#model = NaivesBayes(x_train,y_train)
-#print(model.feature_importances_)
-
-
-#model = logistic(x_train, y_train)
-#model = KNN(x_train,y_train)
-#model = MLP(x_train,y_train)
-
-
-# dtree_predictions = model.predict(X_test)
-# cm = confusion_matrix(Y_test, dtree_predictions)
-# print(cm)
-# print(accuracy_score(Y_test,dtree_predictions))
-
-# nligneInit = dfEventInit.shape[0]
-# diffTest = []
-# for el in range(nligneInit):
-#     value = np.min(np.abs(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1])
-#         & (dfresult['event'] == dfEventInit.iloc[el,2]), 'frame'] - dfEventInit.iloc[el,3]))
-#     diffTest = np.append(diffTest, value)
-    # if (value > 5 or math.isnan(value)):
-    #     print(dfEventInit.iloc[el,:])
-    #     print 'result : ', value
-    #     print(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1]) & (dfresult['event'] == dfEventInit.iloc[el,2])])
-    #     print("\n\n")
-    #diffTest = np.append(diff, np.min(np.abs(dfEventInit.loc[''])))
 print(" list Mean Expo Off ", MeanExpoOff)
 print(" Erreur sum total Off: ", np.mean(MeanSumOff))
 print(" Erreur exponentiel Off: ", np.mean(MeanExpoOff))
