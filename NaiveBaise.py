@@ -15,10 +15,10 @@ from sklearn import tree
 from sklearn.cluster import KMeans
 
 
-#calul the precise event and add one if it was forget
+#compute the precise event and add one if it was forget, the fucntion use kmeans algorithm to find if an element is missing
 def computelist(dfresult, list, pied, cur, filename):
     if (list[-1] - list[0] >= 30):
-        # On fait le centroid
+        # compute centroids
         kmeans = KMeans(n_clusters=2, random_state=0).fit(np.array(list).reshape(-1,1))
         centroid = kmeans.cluster_centers_
         dfresult = dfresult.append({'video' : filename , 'pied' : pied, 'event' : cur, 'frame': math.floor(centroid[1][0])}, ignore_index=True)
@@ -38,27 +38,34 @@ def computelist(dfresult, list, pied, cur, filename):
 
     return dfresult.append({'video' : filename , 'pied' : pied, 'event' : cur, 'frame': res}, ignore_index=True)
 
+#logistic function train the model using logistic regression algortihm
 def logistic(x_train, y_train):
     logisticRegr = LogisticRegression()
     logisticRegr.fit(x_train,y_train)
     return logisticRegr
 
+#DecisionTree function train the model using a DecisionStree classifier algortihm
 def NaivesBayes(x_train, y_train):
     dtree_model = DecisionTreeClassifier().fit(x_train,y_train)
     return dtree_model
 
+#KNN function train the model using Knn algortihm
 def KNN(x_train, y_train):
     knn = KNeighborsClassifier(n_neighbors = 3, metric = 'euclidean')
     knn.fit(x_train,y_train)
     return knn
 
-
+#MLP function train the model using MLP algortihm
 def MLP(x_train, y_train):
     mlp = MLPClassifier(hidden_layer_sizes=(15,15,15),max_iter=500)
     mlp.fit(x_train,y_train)
     return mlp
 
-
+# Data(neighbours, directoire, dirpath) take as parameter:
+# -neughtbours: a list that define the noEvent samples. Ex [-15,0,15] means that 15 frames before and after the event we have a noEvent
+# -directoire: the path to the directories where the different patologies are listed
+# -dirpath: the name of the folder corresponding to the chosen patology
+# the fucntion return a data frame containing all information needed for a specif event of the corresponding chosen files.
 def Data(neighbours, directoire, dirpath):
     k = 0
     data = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied'])
@@ -101,6 +108,7 @@ def Data(neighbours, directoire, dirpath):
                     break
     return data
 
+#Extracte from the dataframe the filename, parse the filename to find the patient id, compute the set of the patient id
 def ParseFileName(dataframe):
     filename = []
     idlist = []
@@ -117,6 +125,8 @@ def ParseFileName(dataframe):
 
     return filename,idlist,idset
 
+
+#split data into xTrain and xTest by splitting the idset in 3 parts: 2/3 for training, 1/3 for testing
 def SplitData(pos, idset, idlist, filename):
     idTest = []
     idTrain = []
@@ -145,7 +155,7 @@ def SplitData(pos, idset, idlist, filename):
             xTest.append(filename[i])
     return xTrain, xTest
 
-
+#
 def test(dataFrame, listTrain, listTest, dir , dirpath):
     dataTrain = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied'])
     dataTest = pd.DataFrame(columns = ['video', 'pied','event','frame', 'TOEz-mean_TOEz','TOEx-HEEx', 'KNEx-TOEx','min_pied'])
