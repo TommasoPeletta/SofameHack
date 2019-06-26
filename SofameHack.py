@@ -16,6 +16,7 @@ from sklearn.cluster import KMeans
 
 
 #compute the precise event and add one if it was forget, the fucntion use kmeans algorithm to find if an element is missingdef computelist(dfresult, list, pied, cur, filename):
+def computelist(dfresult, list, pied, cur, filename):
     if (list[-1] - list[0] >= 30):
         # On fait le centroid
         kmeans = KMeans(n_clusters=2, random_state=0).fit(np.array(list).reshape(-1,1))
@@ -278,53 +279,7 @@ MeanExpoStrick = np.zeros(3)
 for i in range(3):
     [listTrain, listTest] = SplitData(i, setPersonne, idPersonne, filename)
     [MeanSumOff[i], MeanExpoOff[i], MeanSumStrick[i], MeanExpoStrick[i]] = test(dataFrame, listTrain, listTest, dir , dirpath)
-# for i in range(10):
-#     [x_train, y_train, dfInit] = dataCollect(framelist, dir, dirpath)
-#     model = NaivesBayes(x_train,y_train)
-#     dataframeresult = testmodel(model, dir, dirpath)
-#     nligneInit = dfInit.shape[0]
-#     diffTest = []
-#     for el in range(nligneInit):
-#         value = np.min(np.abs(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1])
-#             & (dataframeresult['event'] == dfInit.iloc[el,2]), 'frame'] - dfInit.iloc[el,3]))
-#         diffTest = np.append(diffTest, value)
-#         # if (value > 6 or math.isnan(value)):
-#         #     print(dfInit.iloc[el,:])
-#         #     print 'result : ', value
-#         #     print(dataframeresult.loc[(dataframeresult['video'] == dfInit.iloc[el,0]) & (dataframeresult['pied'] == dfInit.iloc[el,1]) & (dataframeresult['event'] == dfInit.iloc[el,2])])
-#         #     print("\n\n")
-#     print(model.feature_importances_)
-#     MeanSum = np.append(MeanSum,  np.sum(diffTest))
-#     MeanExpo = np.append(MeanExpo, np.sum(np.exp(diffTest), axis = 0))
 
-
-#X_train, X_test,Y_train,Y_test = train_test_split(x_train,y_train)
-#model = NaivesBayes(x_train,y_train)
-#print(model.feature_importances_)
-
-
-#model = logistic(x_train, y_train)
-#model = KNN(x_train,y_train)
-#model = MLP(x_train,y_train)
-
-
-# dtree_predictions = model.predict(X_test)
-# cm = confusion_matrix(Y_test, dtree_predictions)
-# print(cm)
-# print(accuracy_score(Y_test,dtree_predictions))
-
-# nligneInit = dfEventInit.shape[0]
-# diffTest = []
-# for el in range(nligneInit):
-#     value = np.min(np.abs(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1])
-#         & (dfresult['event'] == dfEventInit.iloc[el,2]), 'frame'] - dfEventInit.iloc[el,3]))
-#     diffTest = np.append(diffTest, value)
-    # if (value > 5 or math.isnan(value)):
-    #     print(dfEventInit.iloc[el,:])
-    #     print 'result : ', value
-    #     print(dfresult.loc[(dfresult['video'] == dfEventInit.iloc[el,0]) & (dfresult['pied'] == dfEventInit.iloc[el,1]) & (dfresult['event'] == dfEventInit.iloc[el,2])])
-    #     print("\n\n")
-    #diffTest = np.append(diff, np.min(np.abs(dfEventInit.loc[''])))
 print(" list Mean Expo Off ", MeanExpoOff)
 print(" Erreur sum total Off: ", np.mean(MeanSumOff))
 print(" Erreur exponentiel Off: ", np.mean(MeanExpoOff))
