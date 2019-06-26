@@ -194,6 +194,7 @@ def test(dataFrame, listTrain, listTest, dir , dirpath):
 def testmodel(model, directoire, dirpath, listTest):
     dfresult = pd.DataFrame(columns = ['video', 'pied','event','frame'])
 
+    #Left leg testing
     for d in directoire:
         for filename in listTest:
             path = dirpath + d + filename
@@ -204,9 +205,7 @@ def testmodel(model, directoire, dirpath, listTest):
             acq = reader.GetOutput()
             mean_TOE = np.mean(acq.GetPoint('LTOE').GetValues()[:,2])
             mean_dif = np.mean(acq.GetPoint('LTOE').GetValues()[:,0]-acq.GetPoint('LHEE').GetValues()[:,0])
-
             data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('LTOE').GetValues()[:,0]-acq.GetPoint('LHEE').GetValues()[:,0]-mean_dif]))), axis = 1)
-            #data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
             data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('LKNE').GetValues()[:,0]-acq.GetPoint('LTOE').GetValues()[:,0]]))),axis = 1)
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
@@ -229,7 +228,7 @@ def testmodel(model, directoire, dirpath, listTest):
 
 
 
-
+    #right leg testing
     for d in directoire:
         for filename in listTest:
             path = dirpath + d + filename
@@ -240,10 +239,7 @@ def testmodel(model, directoire, dirpath, listTest):
             acq = reader.GetOutput()
             mean_TOE = np.mean(acq.GetPoint('RTOE').GetValues()[:,2])
             mean_dif = np.mean(acq.GetPoint('RTOE').GetValues()[:,0]-acq.GetPoint('RHEE').GetValues()[:,0])
-
             data_FrameRef = np.concatenate((np.transpose(np.array([acq.GetPoint('RTOE').GetValues()[:,2]-mean_TOE])), np.transpose(np.array([acq.GetPoint('RTOE').GetValues()[:,0]-acq.GetPoint('RHEE').GetValues()[:,0]-mean_dif]))), axis = 1)
-
-            #data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RPSI').GetValues()[:,2]-mean_PSI]))), axis = 1)
             data_FrameRef = np.concatenate((data_FrameRef, np.transpose(np.array([acq.GetPoint('RKNE').GetValues()[:,0]-acq.GetPoint('RTOE').GetValues()[:,0]]))),axis = 1)
             P =model.predict(data_FrameRef)
             df = pd.DataFrame(data=P, columns = ['result'])
@@ -264,6 +260,7 @@ def testmodel(model, directoire, dirpath, listTest):
                 if (i == nligne-2):
                     dfresult = computelist(dfresult, comp_list, 'right', current, filename)
     return dfresult
+
 
 
 dirpath = './Sofamehack2019/Sub_DB_Checked/'
